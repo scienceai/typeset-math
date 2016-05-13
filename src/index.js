@@ -33,8 +33,8 @@ export function fixTypesetting ($root) {
           , vb = ($svg.getAttribute('viewBox') || '').split(/\s+/).map(parseFloat)
         ;
         if (!h || !vb.length) return;
-        // vertical-align = (vb-height + vb-y) / (vb-height / height)
-        let va = (vb[3] / vb[1]) / (vb[3] / h);
+        // vertical-align = -(vb-height + vb-y) / (vb-height / height)
+        let va = -(vb[3] + vb[1]) / (vb[3] / h);
         $svg.style.verticalAlign = `${va}ex`;
       }
       catch (e) {
