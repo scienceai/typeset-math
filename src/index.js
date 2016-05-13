@@ -1,61 +1,45 @@
+
 import React, { Component, PropTypes } from 'react';
 import { findDOMNode } from 'react-dom';
-import katex from 'katex';
 
-export default function typesetMath(ComposedComponent, propName = 'content') {
+export default function typesetMath (ComposedComponent, propName = 'content') {
   class Math extends Component {
-    componentDidUpdate(prevProps, prevState) {
+    componentDidMount() {
+      this.renderMath();
+    }
+    componentDidUpdate(prevProps) {
       if (this.props[propName] !== prevProps[propName]) {
         this.renderMath();
       }
     }
-
-    componentDidMount() {
-      this.renderMath();
-    }
-
     renderMath() {
-      const $root = findDOMNode(this);
-
-      Array.prototype.forEach.call($root.querySelectorAll('math'), $math => {
-        // document worker add an <annotation> element within <math> with the TeX content
-        if ($math.parentNode.classList.contains('katex-mathml')) return;
-        const $annotation = $math.querySelector('annotation');
-        if (! $annotation) return;
-        let opts = {
-          displayMode: ($math.getAttribute('display') === 'block'),
-          throwOnError: false
-        };
-        const target = document.createDocumentFragment();
-        try {
-          katex.render(fixTeX($annotation.textContent), target, opts);
-          $math.parentNode.replaceChild(target, $math);
-        }
-        catch (e) {
-          // this is the same colour as KaTeX uses for errors
-          $math.setAttribute('style', 'color: rgb(204, 0, 0)');
-          console.error('KaTeX error:', e);
-        }
-      });
+      fixTypesetting(findDOMNode(this));
     }
-
     render() {
       return <ComposedComponent {...this.props} />;
     }
-  };
-
+  }
   Math.propTypes = {
-    [propName]: PropTypes.any
+    [propName]: PropTypes.any,
   };
-
   return Math;
-};
+}
 
-
-// some fixes we can run pre-emptively to help KaTeX handle at-times incorrect values
-function fixTeX(str) {
-  if (!str) return '';
-  return str.replace(/(\\text\{[^}]*)π([^}]*\})/g, '$1}\\pi\\text{$2')
-            .replace(/\\overrightarrow/g, '\\vec')
-            .replace(/\\operatorname\{([^{}]*)\}/g, '$1');
+export function fixTypesetting ($root) {
+  Array.from($root.querySelectorAll('span[role="math"] > svg'))
+    .forEach($svg => {
+      try {
+        let h = parseFloat($svg.getAttribute('height'))
+          , vb = ($svg.getAttribute('viewBox') || '').split(/\s+/).map(parseFloat)
+        ;
+        if (!h || !vb.length) return;
+        // vertical-align = (vb-height + vb-y) / (vb-height / height)
+        let va = (vb[3] / vb[1]) / (vb[3] / h);
+        $svg.style.verticalAlign = `${va}ex`;
+      }
+      catch (e) {
+        console.error(`Typesetting error: ${e}`);
+      }
+    })
+  ;
 }
