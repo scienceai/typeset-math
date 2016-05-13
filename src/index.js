@@ -4,18 +4,18 @@ import { findDOMNode } from 'react-dom';
 
 export default function typesetMath (ComposedComponent, propName = 'content') {
   class Math extends Component {
-    componentDidMount() {
+    componentDidMount () {
       this.renderMath();
     }
-    componentDidUpdate(prevProps) {
+    componentDidUpdate (prevProps) {
       if (this.props[propName] !== prevProps[propName]) {
         this.renderMath();
       }
     }
-    renderMath() {
+    renderMath () {
       fixTypesetting(findDOMNode(this));
     }
-    render() {
+    render () {
       return <ComposedComponent {...this.props} />;
     }
   }
